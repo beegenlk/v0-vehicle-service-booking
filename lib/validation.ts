@@ -25,11 +25,11 @@ export function validatePhone(phone: string): { valid: boolean; error?: string }
 
 /**
  * Validate vehicle number
- * Allowed formats:
- * - AB-1234 (2 letters, hyphen, 4 digits)
- * - ABC-1234 (3 letters, hyphen, 4 digits)
- * - 300-1234 (3 digits, hyphen, 4 digits)
- * - 65-1234 (2 digits, hyphen, 4 digits)
+ * Allowed formats (with or without hyphen):
+ * - AB-1234 or AB1234 (2 letters, 4 digits)
+ * - ABC-1234 or ABC1234 (3 letters, 4 digits)
+ * - 300-1234 or 3001234 (3 digits, 4 digits)
+ * - 65-1234 or 651234 (2 digits, 4 digits)
  */
 export function validateVehicleNumber(
   vehicleNo: string
@@ -40,12 +40,12 @@ export function validateVehicleNumber(
     return { valid: false, error: "Vehicle number is required" }
   }
 
-  // Pattern: (2-3 letters OR 2-3 digits) - 4 digits
+  // Pattern: (2-3 letters OR 2-3 digits) followed by optional hyphen and 4 digits
   const patterns = [
-    /^[A-Z]{2}-\d{4}$/, // AB-1234
-    /^[A-Z]{3}-\d{4}$/, // ABC-1234
-    /^\d{3}-\d{4}$/, // 300-1234
-    /^\d{2}-\d{4}$/, // 65-1234
+    /^[A-Z]{2}-?\d{4}$/, // AB-1234 or AB1234
+    /^[A-Z]{3}-?\d{4}$/, // ABC-1234 or ABC1234
+    /^\d{3}-?\d{4}$/, // 300-1234 or 3001234
+    /^\d{2}-?\d{4}$/, // 65-1234 or 651234
   ]
 
   const isValid = patterns.some((pattern) => pattern.test(trimmed))
@@ -53,7 +53,7 @@ export function validateVehicleNumber(
   if (!isValid) {
     return {
       valid: false,
-      error: "Invalid format. Use: AB-1234, ABC-1234, 300-1234, or 65-1234",
+      error: "Invalid format. Use: AB1234, ABC1234, 3001234, or 651234",
     }
   }
 
@@ -72,6 +72,8 @@ export function validateBookingForm(
 
   if (!customerName.trim()) {
     errors.name = "Name is required"
+  } else if (customerName.trim().length > 25) {
+    errors.name = "Name must be 25 characters or less"
   }
 
   const phoneValidation = validatePhone(phone)

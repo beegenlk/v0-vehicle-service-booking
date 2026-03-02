@@ -137,9 +137,12 @@ export default function BookingPage() {
   }
 
   function handlePhoneChange(value: string) {
-    setPhone(value)
+    // Only allow digits and limit to 10 characters
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 10)
+    setPhone(digitsOnly)
+    
     if (errors.phone) {
-      const validation = validatePhone(value)
+      const validation = validatePhone(digitsOnly)
       setErrors((prev) => {
         const newErrors = { ...prev }
         if (validation.valid) {
@@ -318,15 +321,27 @@ export default function BookingPage() {
               Your Details
             </Label>
 
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Full Name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="pl-10 min-h-11"
-                required
-              />
+            <div>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Full Name (max 25 characters)"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value.slice(0, 25))}
+                  maxLength={25}
+                  className={cn("pl-10 min-h-11", errors.name && "border-destructive focus-visible:ring-destructive")}
+                  required
+                />
+              </div>
+              {errors.name && (
+                <div className="mt-2 flex items-center gap-1.5 text-sm text-destructive">
+                  <AlertCircle className="size-4" />
+                  <span>{errors.name}</span>
+                </div>
+              )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {customerName.length}/25 characters
+              </p>
             </div>
 
             <div>
@@ -337,6 +352,7 @@ export default function BookingPage() {
                   type="tel"
                   value={phone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
+                  maxLength={10}
                   className={cn("pl-10 min-h-11", errors.phone && "border-destructive focus-visible:ring-destructive")}
                   required
                 />
@@ -347,13 +363,16 @@ export default function BookingPage() {
                   <span>{errors.phone}</span>
                 </div>
               )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {phone.length}/10 digits
+              </p>
             </div>
 
             <div>
               <div className="relative">
                 <Car className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Vehicle Number (e.g., AB-1234)"
+                  placeholder="Vehicle Number (e.g., AB1234 or ABC1234)"
                   value={vehicleNo}
                   onChange={(e) => handleVehicleChange(e.target.value.toUpperCase())}
                   className={cn("pl-10 min-h-11", errors.vehicle && "border-destructive focus-visible:ring-destructive")}
@@ -366,6 +385,9 @@ export default function BookingPage() {
                   <span>{errors.vehicle}</span>
                 </div>
               )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Format: AB1234, ABC1234, 3001234, or 651234
+              </p>
             </div>
           </section>
 
