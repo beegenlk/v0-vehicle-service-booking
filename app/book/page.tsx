@@ -5,6 +5,7 @@ import useSWR from "swr"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { getNext7Days } from "@/lib/dates"
+import { validatePhone, validateVehicleNumber, validateBookingForm } from "@/lib/validation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { AppHeader } from "@/components/app-header"
-import { CalendarPlus, CheckCircle2, Clock, User, Phone, Car } from "lucide-react"
+import { CalendarPlus, CheckCircle2, Clock, User, Phone, Car, AlertCircle } from "lucide-react"
 
 interface ServiceSlot {
   id: string
@@ -49,6 +50,7 @@ export default function BookingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const { data, mutate } = useSWR(`/api/bookings?date=${selectedDate}`, fetcher, {
     refreshInterval: 15000,
@@ -68,11 +70,19 @@ export default function BookingPage() {
       toast.error("Please select a time slot")
       return
     }
-    if (!customerName.trim() || !phone.trim() || !vehicleNo.trim()) {
-      toast.error("Please fill in all fields")
+
+    const validation = validateBookingForm(customerName, phone, vehicleNo)
+    
+    if (!validation.valid) {
+      setErrors(validation.errors)
+      const errorMessages = Object.values(validation.errors)
+      if (errorMessages.length > 0) {
+        toast.error(errorMessages[0])
+      }
       return
     }
 
+    setErrors({})
     setShowConfirmDialog(true)
   }
 
@@ -123,6 +133,39 @@ export default function BookingPage() {
     setCustomerName("")
     setPhone("")
     setVehicleNo("")
+    setErrors({})
+  }
+
+  function handlePhoneChange(value: string) {
+    setPhone(value)
+    if (errors.phone) {
+      const validation = validatePhone(value)
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        if (validation.valid) {
+          delete newErrors.phone
+        } else {
+          newErrors.phone = validation.error || "Invalid phone number"
+        }
+        return newErrors
+      })
+    }
+  }
+
+  function handleVehicleChange(value: string) {
+    setVehicleNo(value)
+    if (errors.vehicle) {
+      const validation = validateVehicleNumber(value)
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        if (validation.valid) {
+          delete newErrors.vehicle
+        } else {
+          newErrors.vehicle = validation.error || "Invalid vehicle number"
+        }
+        return newErrors
+      })
+    }
   }
 
   if (confirmation) {
@@ -286,27 +329,43 @@ export default function BookingPage() {
               />
             </div>
 
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Phone Number"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="pl-10 min-h-11"
-                required
-              />
+            <div>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Phone Number (10 digits starting with 0)"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  className={cn("pl-10 min-h-11", errors.phone && "border-destructive focus-visible:ring-destructive")}
+                  required
+                />
+              </div>
+              {errors.phone && (
+                <div className="mt-2 flex items-center gap-1.5 text-sm text-destructive">
+                  <AlertCircle className="size-4" />
+                  <span>{errors.phone}</span>
+                </div>
+              )}
             </div>
 
-            <div className="relative">
-              <Car className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Vehicle Number (e.g., KA-01-AB-1234)"
-                value={vehicleNo}
-                onChange={(e) => setVehicleNo(e.target.value)}
-                className="pl-10 min-h-11"
-                required
-              />
+            <div>
+              <div className="relative">
+                <Car className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Vehicle Number (e.g., AB-1234)"
+                  value={vehicleNo}
+                  onChange={(e) => handleVehicleChange(e.target.value.toUpperCase())}
+                  className={cn("pl-10 min-h-11", errors.vehicle && "border-destructive focus-visible:ring-destructive")}
+                  required
+                />
+              </div>
+              {errors.vehicle && (
+                <div className="mt-2 flex items-center gap-1.5 text-sm text-destructive">
+                  <AlertCircle className="size-4" />
+                  <span>{errors.vehicle}</span>
+                </div>
+              )}
             </div>
           </section>
 
