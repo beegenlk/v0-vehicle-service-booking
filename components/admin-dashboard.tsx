@@ -106,6 +106,12 @@ export function AdminDashboardContent({ password, onLogout }: AdminDashboardCont
   const [addSlotOpen, setAddSlotOpen] = useState(false)
   const [newSlotTime, setNewSlotTime] = useState("")
   const [addingSlot, setAddingSlot] = useState(false)
+  const [editCapacityOpen, setEditCapacityOpen] = useState(false)
+  const [editingSlot, setEditingSlot] = useState<{ slotTime: string; maxCapacity: number } | null>(
+    null
+  )
+  const [newCapacity, setNewCapacity] = useState("")
+  const [savingCapacity, setSavingCapacity] = useState(false)
 
   const fetcher = (url: string) =>
     fetch(url, { headers: { "x-admin-password": password } }).then((r) => {
@@ -231,6 +237,52 @@ export function AdminDashboardContent({ password, onLogout }: AdminDashboardCont
     }
   }
 
+  async function handleSaveCapacity() {
+    if (!editingSlot || !newCapacity) {
+      toast.error("Please enter a capacity")
+      return
+    }
+
+    const capacity = parseInt(newCapacity)
+    if (isNaN(capacity) || capacity < 1) {
+      toast.error("Capacity must be a positive number")
+      return
+    }
+
+    setSavingCapacity(true)
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({
+          action: "updateCapacity",
+          date: selectedDate,
+          slotTime: editingSlot.slotTime,
+          maxCapacity: capacity,
+        }),
+      })
+
+      const result = await res.json()
+      if (!res.ok) {
+        toast.error(result.error || "Failed to update capacity")
+        return
+      }
+
+      toast.success(`Capacity updated to ${capacity}`)
+      setEditCapacityOpen(false)
+      setEditingSlot(null)
+      setNewCapacity("")
+      mutate()
+    } catch {
+      toast.error("Failed to update capacity")
+    } finally {
+      setSavingCapacity(false)
+    }
+  }
+
   function getNextStatus(current: Booking["status"]): Booking["status"] | null {
     const flow: Record<string, Booking["status"]> = {
       Waiting: "Arrived",
@@ -351,13 +403,21 @@ export function AdminDashboardContent({ password, onLogout }: AdminDashboardCont
               .map((slot) => (
                 <div
                   key={slot.id}
-                  className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-sm"
+                  className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-sm group"
                 >
                   <Clock className="size-3 text-muted-foreground" />
                   <span className="font-medium text-foreground">{slot.slotTime}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <button
+                    onClick={() => {
+                      setEditingSlot({ slotTime: slot.slotTime, maxCapacity: slot.maxCapacity })
+                      setNewCapacity(slot.maxCapacity.toString())
+                      setEditCapacityOpen(true)
+                    }}
+                    className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                    title={`Click to edit capacity (${slot.bookedCount}/${slot.maxCapacity})`}
+                  >
                     ({slot.bookedCount}/{slot.maxCapacity})
-                  </span>
+                  </button>
                   {slot.bookedCount === 0 && (
                     <button
                       onClick={() => handleRemoveSlot(slot.slotTime)}
@@ -370,6 +430,42 @@ export function AdminDashboardContent({ password, onLogout }: AdminDashboardCont
                 </div>
               ))}
           </div>
+
+          {/* Edit Capacity Dialog */}
+          <Dialog open={editCapacityOpen} onOpenChange={setEditCapacityOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Slot Capacity</DialogTitle>
+                <DialogDescription>
+                  Set the maximum number of vehicles for {editingSlot?.slotTime}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-3 py-4">
+                <Label htmlFor="capacity">Max Vehicles per Slot</Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  min="1"
+                  value={newCapacity}
+                  onChange={(e) => setNewCapacity(e.target.value)}
+                  placeholder="e.g., 3"
+                />
+                {editingSlot && (
+                  <p className="text-xs text-muted-foreground">
+                    Currently: {editingSlot.bookedCount} booked out of {editingSlot.maxCapacity}
+                  </p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditCapacityOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveCapacity} disabled={savingCapacity}>
+                  {savingCapacity ? "Saving..." : "Save"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Bookings by Slot */}
           {bookings.length === 0 ? (

@@ -10,6 +10,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { AppHeader } from "@/components/app-header"
 import { CalendarPlus, CheckCircle2, Clock, User, Phone, Car } from "lucide-react"
 
@@ -39,6 +48,7 @@ export default function BookingPage() {
   const [phone, setPhone] = useState("")
   const [vehicleNo, setVehicleNo] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null)
 
   const { data, mutate } = useSWR(`/api/bookings?date=${selectedDate}`, fetcher, {
@@ -52,7 +62,7 @@ export default function BookingPage() {
     setSelectedSlot(null)
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     if (!selectedSlot) {
@@ -64,6 +74,10 @@ export default function BookingPage() {
       return
     }
 
+    setShowConfirmDialog(true)
+  }
+
+  async function confirmBooking() {
     setSubmitting(true)
     try {
       const res = await fetch("/api/bookings", {
@@ -82,9 +96,11 @@ export default function BookingPage() {
 
       if (!res.ok) {
         toast.error(result.error || "Failed to create booking")
+        setShowConfirmDialog(false)
         return
       }
 
+      setShowConfirmDialog(false)
       setConfirmation({
         id: result.booking.id,
         date: selectedDate,
@@ -96,6 +112,7 @@ export default function BookingPage() {
       mutate()
     } catch {
       toast.error("Something went wrong. Please try again.")
+      setShowConfirmDialog(false)
     } finally {
       setSubmitting(false)
     }
@@ -304,6 +321,58 @@ export default function BookingPage() {
             {submitting ? "Booking..." : "Book Now"}
           </Button>
         </form>
+
+        {/* Confirmation Dialog */}
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Your Booking</DialogTitle>
+              <DialogDescription>
+                Please review your details before confirming
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 py-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Date:</span>
+                <span className="font-semibold text-foreground">
+                  {days.find((d) => d.dateStr === selectedDate)?.label || selectedDate}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Time:</span>
+                <span className="font-semibold text-foreground">{selectedSlot}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Name:</span>
+                <span className="font-semibold text-foreground">{customerName}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Phone:</span>
+                <span className="font-semibold text-foreground">{phone}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Vehicle:</span>
+                <span className="font-semibold text-foreground">{vehicleNo.toUpperCase()}</span>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirmDialog(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmBooking}
+                disabled={submitting}
+                className="min-h-11"
+              >
+                {submitting ? "Confirming..." : "Confirm Booking"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )
