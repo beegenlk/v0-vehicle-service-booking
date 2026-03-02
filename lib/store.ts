@@ -34,7 +34,7 @@ const DEFAULT_SLOT_TIMES = [
   "5:00 PM",
 ]
 
-const MAX_PER_SLOT = 3
+const MAX_PER_SLOT = 1
 const MAX_PER_DAY = 20
 
 // In-memory storage
@@ -187,5 +187,30 @@ export function removeSlot(
   }
 
   serviceSlots.splice(idx, 1)
+  return { success: true }
+}
+
+export function updateSlotCapacity(
+  date: string,
+  slotTime: string,
+  maxCapacity: number
+): { success: boolean; error?: string } {
+  const slot = serviceSlots.find((s) => s.date === date && s.slotTime === slotTime)
+  if (!slot) {
+    return { success: false, error: "Slot not found" }
+  }
+
+  if (maxCapacity < 1) {
+    return { success: false, error: "Capacity must be at least 1" }
+  }
+
+  if (slot.bookedCount > maxCapacity) {
+    return {
+      success: false,
+      error: `Cannot set capacity below booked count (${slot.bookedCount})`,
+    }
+  }
+
+  slot.maxCapacity = maxCapacity
   return { success: true }
 }

@@ -5,6 +5,7 @@ import {
   updateBookingStatus,
   addCustomSlot,
   removeSlot,
+  updateSlotCapacity,
   type BookingStatus,
 } from "@/lib/store"
 
@@ -114,6 +115,20 @@ export async function POST(request: NextRequest) {
       )
     }
     const result = removeSlot(date, slotTime)
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+    return NextResponse.json({ success: true })
+  }
+
+  if (action === "updateCapacity") {
+    if (!date || !slotTime || maxCapacity === undefined) {
+      return NextResponse.json(
+        { error: "date, slotTime, and maxCapacity are required" },
+        { status: 400 }
+      )
+    }
+    const result = updateSlotCapacity(date, slotTime, maxCapacity)
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
