@@ -3,12 +3,11 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { CalendarPlus, ListOrdered, Settings, Wrench } from "lucide-react"
+import { CalendarPlus, ListOrdered, LogIn, Wrench } from "lucide-react"
 
 const navItems = [
   { href: "/book", label: "Book", icon: CalendarPlus },
   { href: "/queue", label: "Queue", icon: ListOrdered },
-  { href: "/admin", label: "Admin", icon: Settings },
 ]
 
 export function AppHeader() {
@@ -44,6 +43,20 @@ export function AppHeader() {
               </Link>
             )
           })}
+          <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors",
+              pathname === "/admin"
+                ? "text-foreground"
+                : "text-muted-foreground/60 hover:text-muted-foreground"
+            )}
+            title="Admin Login"
+          >
+            <LogIn className="size-3.5" />
+            <span className="sr-only">Admin Login</span>
+          </Link>
         </nav>
       </div>
     </header>

@@ -1,7 +1,7 @@
 import Link from "next/link"
-import { CalendarPlus, ListOrdered, Settings, Wrench } from "lucide-react"
+import { CalendarPlus, ListOrdered, Wrench } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function HomePage() {
   return (
@@ -46,22 +46,6 @@ export default function HomePage() {
                   <div>
                     <CardTitle className="text-base">Live Queue</CardTitle>
                     <CardDescription>View real-time service queue status</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          </Link>
-
-          <Link href="/admin">
-            <Card className="group cursor-pointer transition-all hover:border-primary/40 hover:shadow-md">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                    <Settings className="size-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Admin Dashboard</CardTitle>
-                    <CardDescription>Manage bookings and service slots</CardDescription>
                   </div>
                 </div>
               </CardHeader>
