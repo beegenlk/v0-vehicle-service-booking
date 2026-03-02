@@ -55,7 +55,7 @@ export default function BookingPage() {
     refreshInterval: 15000,
   })
 
-  const slots: ServiceSlot[] = data?.slots || []
+  const slots: ServiceSlot[] = data?.slots ?? []
 
   function handleDateChange(dateStr: string) {
     setSelectedDate(dateStr)
